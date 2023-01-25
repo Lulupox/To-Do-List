@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <title>To-Do List</title>
+      <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+      <style>
+         body {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-direction: column;
+         background-color: #2f3136;
+         color: #000;
+         }
+         .task {
+         background-color: #36393f;
+         padding: 10px;
+         margin-bottom: 10px;
+         border-radius: 5px;
+         }
+         .task input[type="checkbox"] {
+         background-color: #36393f;
+         border: none;
+         }
+         .task input[type="checkbox"]:checked + span {
+         text-decoration: line-through;
+         color: #7289da;
+         }
+         .task span {
+         margin-left: 10px;
+         font-size: 16px;
+         }
+         .task button {
+         background-color: #7289da;
+         color: #fff;
+         border: none;
+         padding: 5px 10px;
+         border-radius: 5px;
+         font-size: 14px;
+         cursor: pointer;
+         }
+         .task button:hover {
+         background-color: #5b6dee;
+         }
+      </style>
+   </head>
+   <body>
+      <h1>To-Do List</h1>
+      <form>
+         <label>Title:</label>
+         <input type="text" id="title" placeholder="Enter task title">
+         <br>
+         <label>Description:</label>
+         <input type="text" id="description" placeholder="Enter task description">
+         <br>
+         <button type="button" onclick="addTask()">Add Task</button>
+      </form>
+      <br>
+      <div id="task-list"></div>
+      <script>
+         function addTask() {
+           let title = $('#title').val();
+           let description = $('#description').val();
+           if(!title) {
+             alert("Title is required to add a task");
+             return;
+           }
+           $.ajax({
+             type: 'POST',
+            
+             url: 'http://localhost:3000/tasks',
+             data: JSON.stringify({title: title, description: description}),
+             contentType: "application/json",
+             success: function(task) {
+               getTasks();
+             },
+             error: function(err) {
+               console.log(err);
+               alert("An error occured while adding the task, please check the console for more details");
+             }
+           });
+         }
+         
+         function markTaskDone(taskId) {
+         $.ajax({
+           type: 'PUT',
+           url: `http://localhost:3000/tasks/${taskId}`,
+           data: JSON.stringify({done: true}),
+           contentType: "application/json",
+           success: function(task) {
+               getTasks();
+           },
+           error: function(err) {
+               console.log(err);
+               alert("An error occured while marking the task as done, please check the console for more details");
+           }
+         });
+         }
+         
+         function deleteTask(taskId) {
+           $.ajax({
+             type: 'DELETE',
+             url: `http://localhost:3000/tasks/${taskId}`,
+             success: function() {
+               getTasks();
+             },
+             error: function(err) {
+               console.log(err);
+               alert("An error occured while deleting the task, please check the console for more details");
+             }
+           });
+         }
+         
+         function getTasks() {
+         $.ajax({
+         type: 'GET',
+         url: 'http://localhost:3000/tasks',
+         success: function(tasks) {
+            let taskList = $('#task-list');
+            taskList.empty();
+            tasks.forEach((task) => {
+                let taskElement = $(`
+                <div style="background-color: ${task.done ? 'green' : 'yellow'}">
+                  <input type="checkbox" onchange="markTaskDone(${task.id})" ${task.done ? 'checked' : ''}>
+                  <span>${task.title}</span>
+                  <span>${task.description}</span>
+                  <button type="button" onclick="deleteTask(${task.id})">Delete</button>
+                </div>
+              `);
+                taskList.append(taskElement);
+            });
+         },
+         error: function(err) {
+            console.log(err);
+            alert("An error occured while fetching the tasks, please check the console for more details");
+         }
+         });
+         }
+         
+         
+         
+         
+         getTasks();
+      </script>
+   </body>
+</html>
